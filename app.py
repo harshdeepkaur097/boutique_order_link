@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import pyperclip
 
 st.set_page_config(page_title="Suit Tool", layout="wide")
 st.title("💼 Punjabi Suit Tools")
@@ -20,10 +19,8 @@ tool = st.sidebar.radio("Choose a Tool", [
     "📌 Pinterest ਲਈ Description ਬਣਾਓ"
 ])
 
-def copy_button(text, key):
-    if st.button("📋 Copy", key=key):
-        pyperclip.copy(text)
-        st.success("Copied to clipboard!")
+def copy_button(text):
+    st.text_area("📋 Copy this", text, height=100)
 
 # 1. Create Code
 if tool == "Create Product Code":
