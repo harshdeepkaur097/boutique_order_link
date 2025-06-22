@@ -10,7 +10,7 @@ if "history" not in st.session_state:
 if "decoded_output" not in st.session_state:
     st.session_state.decoded_output = {}
 
-backend_url = "http://localhost:5001"  # Use your deployed URL here
+backend_url = "https://boutique-order-link-backend.onrender.com"  # Use your deployed URL here
 
 # Sidebar Navigation
 tool = st.sidebar.radio("Choose a Tool", [
