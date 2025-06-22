@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-BACKEND_URL = "http://localhost:5001"  # Change if deployed
+BACKEND_URL = "https://boutique-order-link-backend.onrender.com"  # Change if deployed
 
 st.title("🧵 WhatsApp ਆਰਡਰ ਟੂਲ")
 
