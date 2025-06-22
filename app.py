@@ -19,8 +19,10 @@ tool = st.sidebar.radio("Choose a Tool", [
     "📌 Pinterest ਲਈ Description ਬਣਾਓ"
 ])
 
-def copy_button(text):
-    st.text_area("📋 Copy this", text, height=100)
+def copy_button(text, key_suffix=None):
+    key = f"copy_{key_suffix or text[:10]}"
+    st.text_area("📋 Click below then Ctrl+C to copy", text, key=key, height=100)
+
 
 # 1. Create Code
 if tool == "Create Product Code":
