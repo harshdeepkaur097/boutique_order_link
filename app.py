@@ -9,7 +9,7 @@ st.header("ਪੈਸੇ ਹੀ ਪੈਸੇ")
 with st.form("encode_form_2"):
     col1, col2 = st.columns(2)
     with col1:
-        boutique = st.text_input("ਬੁਟੀਕ ਦਾ ਨਾਂ", placeholder="e.g., mehar_boutique01")
+        boutique = st.text_input("ਬੁਟੀਕ ਦਾ ਸਿਰਫ਼ ਕੋਡ ਭਰੋ - ਪੂਰਾ ਨਾਂ ਨਹੀਂ ਲਿਖਣਾ", placeholder="e.g., CR")
     with col2:
         price = st.text_input("ਅਸਲੀ ਰੇਟ", placeholder="e.g., 3800")
     video_link = st.text_input("ਵੀਡੀਓ ਜਾਂ ਫੋਟੋ pinterest 'ਤੇ ਪਾ ਆਓ, ਉਸਤੋਂ ਬਾਅਦ ਉਸਦਾ ਲਿੰਕ ਇਥੇ paste ਕਰੋ")
