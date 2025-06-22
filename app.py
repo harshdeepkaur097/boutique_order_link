@@ -1,119 +1,112 @@
 import streamlit as st
 import requests
+import pyperclip
 
-API_BASE = "https://boutique-order-link-backend.onrender.com"
+st.set_page_config(page_title="Suit Tool", layout="wide")
+st.title("💼 Punjabi Suit Tools")
 
-st.set_page_config(page_title="Punjabi Suit Code Tool", layout="centered")
-st.title("👗 Punjabi Suit Code Generator")
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-lang = st.radio("🌐 Language / ਭਾਸ਼ਾ ਚੁਣੋ", ["English", "ਪੰਜਾਬੀ"])
+if "decoded_output" not in st.session_state:
+    st.session_state.decoded_output = {}
 
-if lang == "English":
-    st.info("""
-🔐 **Why Use a Secret Key?**
+backend_url = "http://localhost:5001"  # Use your deployed URL here
 
-- 🛡️ **Protect your boutique name & real price** — no one can decode your product codes without your key  
-- ♾️ **Unlimited usage** — no daily limits or restrictions
+# Sidebar Navigation
+tool = st.sidebar.radio("Choose a Tool", [
+    "Create Product Code",
+    "Find boutique name and real price",
+    "📌 Pinterest ਲਈ Description ਬਣਾਓ"
+])
 
-💰 **Only ₹2000/month** – starting price
+def copy_button(text, key):
+    if st.button("📋 Copy", key=key):
+        pyperclip.copy(text)
+        st.success("Copied to clipboard!")
 
-👉 [Get your Secret Key on WhatsApp](https://wa.me/+917973567740)
-""")
-else:
-    st.info("""
-🔐 **ਸਿਕਰਟ ਕੀ ਕਿਉਂ ਲਓ?**
-
-- 🛡️ **ਬੁਟੀਕ ਦਾ ਨਾਂ ਅਤੇ ਅਸਲੀ ਰੇਟ ਲੁਕਾਓ** — ਤੁਹਾਡੇ ਕੋਡ ਕੋਈ ਹੋਰ ਡੀਕੋਡ ਨਹੀਂ ਕਰ ਸਕਦਾ  
-- ♾️ **ਅਣਗਿਣਤ ਵਰਤੋਂ** — ਰੋਜ਼ਾਨਾ ਵਰਤੋਂ ਦੀ ਕੋਈ ਸੀਮਾ ਨਹੀਂ
-
-💰 **ਸਿਰਫ ₹2000/ਮਹੀਨਾ** – ਸ਼ੁਰੂਆਤੀ ਕੀਮਤ
-
-👉 [WhatsApp ਤੇ ਆਪਣੀ Secret Key ਲਵੋ](https://wa.me/+917973567740)
-""")
-
-
-if "generated" not in st.session_state:
-    st.session_state.generated = False
-
-if "usage_count" not in st.session_state:
-    st.session_state.usage_count = 0
-
-MAX_DAILY_USAGE = 5
-MASTER_SECRET = "cr123"  # Replace with your actual master key
-
-custom_messages = {
-    "delivery_time": "🧵 All suits are custom-made & take 5–20 days to prepare.",
-    "shipping_extra": "(Shipping extra – we’ll confirm after order.)",
-    "shipping_free": "(Free shipping within India)"
-}
-
-st.sidebar.header("⚙️ Settings")
-with st.sidebar.expander("Customize Text Messages"):
-    for key in custom_messages:
-        custom_messages[key] = st.text_input(f"{key.replace('_', ' ').title()}", custom_messages[key])
-
-st.markdown("---")
-
-secret_key = st.text_input("🔐 Your Secret Key", type="password")
-
-if secret_key:
-    with st.form("generate_form"):
+# 1. Create Code
+if tool == "Create Product Code":
+    st.header("🎨 Create Product Code")
+    with st.form("encode_form"):
         boutique_name = st.text_input("Boutique Name")
-        price = st.text_input("Base Price (INR)")
-        video_link = st.text_input("Video Link (Optional)")
-        submit_button = st.form_submit_button("Generate Code")
+        price = st.text_input("Price")
+        video_link = st.text_input("Video Link (optional)")
+        secret_key = st.text_input("Secret Key", type="password")
+        submitted = st.form_submit_button("Generate")
 
-    if submit_button:
-        if st.session_state.usage_count >= MAX_DAILY_USAGE and secret_key != MASTER_SECRET:
-            st.warning("⚠️ Daily usage limit reached. Please try again tomorrow or support us on BuyMeACoffee.")
+    if submitted:
+        res = requests.post(f"{backend_url}/encode", json={
+            "boutique_name": boutique_name,
+            "price": price,
+            "video_link": video_link,
+            "secret_key": secret_key
+        })
+        if res.ok:
+            out = res.json()
+            st.session_state.history.append(out)
+            st.subheader("✅ Hidden Code")
+            st.code(out['hidden_code'])
+            copy_button(out['hidden_code'], "copy_hidden")
+            st.markdown(f"[💬 Order on WhatsApp]({out['whatsapp_link']})")
+            copy_button(out['whatsapp_link'], "copy_wa")
         else:
-            payload = {
-                "boutique_name": boutique_name,
-                "price": price,
-                "video_link": video_link,
-                "secret_key": secret_key,
-                "custom_messages": custom_messages
-            }
-            try:
-                res = requests.post(f"{API_BASE}/encode", json=payload)
-                data = res.json()
-                if res.status_code == 200:
-                    st.success("✅ Code Generated Successfully!")
-                    st.code(data['hidden_code'], language="text")
-                    st.markdown(f"[Click to open WhatsApp link 🔗]({data['whatsapp_link']})")
+            st.error(res.json().get("error", "Unknown error"))
 
-                    st.session_state.generated = True
-                    st.session_state.usage_count += 1
-
-                    with st.expander("📌 Pinterest ਲਈ Description ਬਣਾਓ"):
-                        user_description = st.text_area("ਰੇਟ ਮਿਟਾ ਕੇ description ਲਿਖੋ")
-                        if user_description:
-                            st.markdown("**📋 Final Output**")
-                            output_text = f"₹{data['selling_price_inr']}\n{data['hidden_code']}\n{user_description}"
-                            st.code(output_text, language="text")
-                            if st.button("📋 Copy All"):
-                                st.text_area("📋 Copy Manually", output_text)
-                else:
-                    st.error(data.get("error", "Something went wrong"))
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
-
-    st.markdown("---")
+# 2. Decode Code
+elif tool == "Find boutique name and real price":
+    st.header("🔍 Find boutique name and real price")
     with st.form("decode_form"):
-        st.subheader("🔎 Decode a Product Code")
         hidden_code = st.text_input("Enter Hidden Code")
-        decode_button = st.form_submit_button("Decode")
+        secret_key = st.text_input("Enter Your Secret Key", type="password")
+        submitted = st.form_submit_button("Decode")
 
-    if decode_button:
-        try:
-            res = requests.post(f"{API_BASE}/decode", json={"hidden_code": hidden_code, "secret_key": secret_key})
-            data = res.json()
-            if res.status_code == 200: 
-                st.success("✅ Decoded Successfully")
-                st.json(data)
-            else:
-                st.error(data.get("error", "Unauthorized or invalid code."))
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
-else:
-    st.info("🔐 Please enter your secret key to continue.")
+    if submitted:
+        res = requests.post(f"{backend_url}/decode", json={
+            "hidden_code": hidden_code,
+            "secret_key": secret_key
+        })
+        if res.ok:
+            out = res.json()
+            st.session_state.history.append(out)
+            st.session_state.decoded_output = out
+
+            st.subheader("🏷️ Boutique Name")
+            st.success(out['boutique_name'])
+            copy_button(out['boutique_name'], "copy_name")
+
+            st.write(f"💰 Original Price: ₹{out['original_price']}")
+            st.write(f"💵 Selling Price: ₹{out['selling_price_inr']} / ${out['selling_price_usd']}")
+            st.markdown(f"[💬 Order on WhatsApp]({out['whatsapp_link']})")
+            copy_button(out['whatsapp_link'], "copy_decoded_wa")
+        else:
+            st.error(res.json().get("error", "Unauthorized or invalid code"))
+
+# 3. Description Tool
+elif tool == "📌 Pinterest ਲਈ Description ਬਣਾਓ":
+    st.header("📌 Pinterest ਲਈ Description ਬਣਾਓ")
+    default_name = st.session_state.decoded_output.get("boutique_name", "")
+    default_price = st.session_state.decoded_output.get("selling_price_inr", "")
+
+    boutique_name = st.text_input("ਬੁਟੀਕ ਦਾ ਨਾਂ", value=default_name)
+    price = st.text_input("ਕੀਮਤ", value=str(default_price))
+
+    if st.button("✨ Description ਬਣਾਓ"):
+        if boutique_name and price:
+            desc = f"""✨ {boutique_name} | Premium Punjabi Suit ✨
+🧵 Custom-made suit starting at ₹{price}!
+💃 Stylish | Comfortable | Made with love.
+📦 Free Shipping in India / Extra for International.
+📲 Order now on WhatsApp!"""
+
+            st.text_area("Generated Description", desc, height=130)
+            copy_button(desc, "copy_description")
+        else:
+            st.warning("ਕਿਰਪਾ ਕਰਕੇ Boutique Name ਅਤੇ Price ਭਰੋ।")
+
+# History Section
+if st.session_state.history:
+    st.markdown("---")
+    st.subheader("🕘 Previous Results")
+    for item in st.session_state.history[::-1]:
+        st.json(item)

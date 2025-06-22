@@ -25,3 +25,55 @@ git status
 git commit -m "Updated frontend Streamlit app"
 git branch -M main
 git push -u origin main
+
+
+
+or
+
+cd "C:\Users\Harsh\Desktop\Boutique Order Via Pinterest App Ready"
+git remote add origin https://github.com/harshdeepkaur097/boutique_order_link.git
+git branch -M main
+git push -u origin main
+
+
+or
+
+cd "C:\Users\Harsh\Desktop\Boutique Order Via Pinterest App Ready"
+
+git pull origin main --rebase
+git push -u origin main
+
+
+
+✅ Let’s fix it properly using these steps:
+🔧 1. Open Command Prompt
+Run these commands step-by-step:
+
+bash
+Copy
+Edit
+cd "C:\Users\Harsh\Desktop\Boutique Order Via Pinterest App Ready"
+🔄 2. Pull remote changes (safely merge or rebase):
+bash
+Copy
+Edit
+git pull origin main --rebase
+This will bring any changes from GitHub to your local system without overwriting your files.
+
+If it shows no conflicts, you're good.
+
+If it asks to resolve conflicts, follow the prompts.
+
+🚀 3. Now push your updated local code:
+bash
+Copy
+Edit
+git push -u origin main
+⚠️ Alternative (if you're 100% sure your local code should replace GitHub):
+If you want to overwrite GitHub with your local version, run:
+
+bash
+Copy
+Edit
+git push origin main --force
+Be careful: this will erase anything on GitHub that’s not in your local folder.
