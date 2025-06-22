@@ -108,7 +108,7 @@ if secret_key:
         try:
             res = requests.post(f"{API_BASE}/decode", json={"hidden_code": hidden_code, "secret_key": secret_key})
             data = res.json()
-            if res.status_code == 200:
+            if res.status_code == 200: 
                 st.success("✅ Decoded Successfully")
                 st.json(data)
             else:
