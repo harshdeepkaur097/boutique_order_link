@@ -10,7 +10,7 @@ if "history" not in st.session_state:
 if "decoded_output" not in st.session_state:
     st.session_state.decoded_output = {}
 
-backend_url = "https://boutique-order-link-backend.onrender.com"  # Use your deployed URL here
+backend_url = "https://boutique-order-link-backend.onrender.com"  # Update if needed
 
 # Sidebar Navigation
 tool = st.sidebar.radio("Choose a Tool", [
@@ -28,10 +28,17 @@ def copy_button(text, key_suffix=None):
 if tool == "Create Product Code":
     st.header("🎨 Create Product Code")
     with st.form("encode_form"):
-        boutique_name = st.text_input("Boutique Name")
-        price = st.text_input("Price")
-        video_link = st.text_input("Video Link (optional)")
+        boutique_name = st.text_input("Boutique Name", placeholder="e.g. Mera Punjabi Suit")
+        price = st.text_input("Original Price (INR)", placeholder="e.g. 800")
+        product_description = st.text_area("Product Description", placeholder="e.g. All pure cotton. Dupatta included.")
+        video_link = st.text_input("Pinterest or Video Link", placeholder="https://...")
         secret_key = st.text_input("Secret Key", type="password")
+        
+        with st.expander("✏️ Optional: Custom Delivery or Shipping Notes"):
+            delivery_time = st.text_input("Delivery Note", value="🧵 All suits are custom-made & take 5–20 days to prepare.")
+            shipping_free = st.text_input("Shipping Note (India)", value="(Free shipping within India)")
+            shipping_extra = st.text_input("Shipping Note (International)", value="(Shipping extra – we’ll confirm after order.)")
+
         submitted = st.form_submit_button("Generate")
 
     if submitted:
@@ -39,16 +46,38 @@ if tool == "Create Product Code":
             "boutique_name": boutique_name,
             "price": price,
             "video_link": video_link,
-            "secret_key": secret_key
+            "secret_key": secret_key,
+            "description": product_description,
+            "custom_messages": {
+                "delivery_time": delivery_time,
+                "shipping_free": shipping_free,
+                "shipping_extra": shipping_extra
+            }
         })
         if res.ok:
             out = res.json()
             st.session_state.history.append(out)
+
             st.subheader("✅ Hidden Code")
             st.code(out['hidden_code'])
             copy_button(out['hidden_code'], "copy_hidden")
-            st.markdown(f"[💬 Order on WhatsApp]({out['whatsapp_link']})")
+
+            st.subheader("🛍️ Selling Price")
+            st.write(f"INR: ₹{out['selling_price_inr']}")
+            st.write(f"USD: ${out['selling_price_usd']}")
+
+            st.subheader("💬 WhatsApp Order Message")
+            st.markdown(f"[Click to open WhatsApp]({out['whatsapp_link']})")
             copy_button(out['whatsapp_link'], "copy_wa")
+
+            st.subheader("📝 Product Description Block")
+            product_msg = f"""Selling Price - ₹{out['selling_price_inr']} / ${out['selling_price_usd']}
+Code - {out['hidden_code']}
+
+Product details - {product_description}"""
+            st.text_area("One-click Copy Description", product_msg, height=150)
+            copy_button(product_msg, "copy_product_block")
+
         else:
             st.error(res.json().get("error", "Unknown error"))
 
