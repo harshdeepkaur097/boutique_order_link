@@ -1,56 +1,102 @@
 import streamlit as st
 import requests
+import pyperclip
 
-BACKEND_URL = "https://boutique-order-link-backend.onrender.com"  # Change if deployed
+API_BASE = "https://boutique-order-link-backend.onrender.com"
 
-st.title("🧵 WhatsApp ਆਰਡਰ ਟੂਲ")
+st.set_page_config(page_title="Punjabi Suit Code Tool", layout="centered")
+st.title("👗 Punjabi Suit Code Generator")
 
-with st.form("encode_form_2"):
-    col1, col2 = st.columns(2)
-    with col1:
-        boutique = st.text_input("ਬੁਟੀਕ ਦਾ ਸਿਰਫ਼ ਕੋਡ ਭਰੋ - ਪੂਰਾ ਨਾਂ ਨਹੀਂ ਲਿਖਣਾ", placeholder="e.g., CR")
-    with col2:
-        price = st.text_input("ਅਸਲੀ ਰੇਟ", placeholder="e.g., 3800")
-    
-    video_link = st.text_input("ਵੀਡੀਓ ਜਾਂ ਫੋਟੋ pinterest 'ਤੇ ਪਾ ਆਓ, ਉਸਤੋਂ ਬਾਅਦ ਉਸਦਾ ਲਿੰਕ ਇਥੇ paste ਕਰੋ")
+if "generated" not in st.session_state:
+    st.session_state.generated = False
 
-    with st.expander("📱 Add custom details (optional)"):
-        phone_number = st.text_input("📞 WhatsApp Number", value="917973567740")
-        razorpay_link = st.text_input("💸 Razorpay Link", value="https://razorpay.me/@merapunjabisuit")
-        paypal_link = st.text_input("🌍 PayPal Link", value="https://paypal.me/parmjitkaur0069")
+if "usage_count" not in st.session_state:
+    st.session_state.usage_count = 0
 
-    encode_submit = st.form_submit_button("ਲਿੰਕ ਬਣਾਓ")
+MAX_DAILY_USAGE = 5
 
-    if encode_submit:
-        payload = {
-            "boutique_name": boutique,
-            "price": price,
-            "video_link": video_link,
-            "phone_number": phone_number,
-            "razorpay_link": razorpay_link,
-            "paypal_link": paypal_link
-        }
-        response = requests.post(f"{BACKEND_URL}/encode", json=payload)
-        if response.status_code == 200:
-            data = response.json()
-            st.success(f"🆔 ਕੋਡ ਬਣ ਗਿਆ: {data['hidden_code']}")
-            st.code(data['whatsapp_link'], language="")
+def copy_to_clipboard(text):
+    pyperclip.copy(text)
+    st.success("Copied to clipboard!")
+
+st.markdown("---")
+
+secret_key = st.text_input("🔐 Your Secret Key", type="password")
+
+# 🛠️ Advanced Boutique Settings (Collapsible)
+if secret_key:
+    with st.expander("⚙️ Boutique Defaults"):
+        col1, col2 = st.columns(2)
+        with col1:
+            custom_line_1 = st.text_area("🧵 Delivery Time Line", value=st.session_state.get("custom_line_1", "🧵 All suits are custom-made & take 5–20 days to prepare."))
+            custom_line_3 = st.text_area("📦 India Shipping Line", value=st.session_state.get("custom_line_3", "(Free shipping within India)"))
+        with col2:
+            custom_line_2 = st.text_area("🌍 Intl Shipping Line", value=st.session_state.get("custom_line_2", "(Shipping extra – we’ll confirm after order.)"))
+
+        # Save settings in session
+        st.session_state["custom_line_1"] = custom_line_1
+        st.session_state["custom_line_2"] = custom_line_2
+        st.session_state["custom_line_3"] = custom_line_3
+
+    with st.form("generate_form"):
+        boutique_name = st.text_input("Boutique Name")
+        price = st.text_input("Base Price (INR)")
+        video_link = st.text_input("Video Link (Optional)")
+        submit_button = st.form_submit_button("Generate Code")
+
+    if submit_button:
+        if st.session_state.usage_count >= MAX_DAILY_USAGE and secret_key != "your_master_key_here":
+            st.warning("⚠️ Daily usage limit reached. Please try again tomorrow or support us on BuyMeACoffee.")
         else:
-            st.error(f"Error: {response.json().get('error', 'Failed to encode')}")
+            payload = {
+                "boutique_name": boutique_name,
+                "price": price,
+                "video_link": video_link,
+                "secret_key": secret_key,
+                "custom_line_1": st.session_state["custom_line_1"],
+                "custom_line_2": st.session_state["custom_line_2"],
+                "custom_line_3": st.session_state["custom_line_3"]
+            }
+            try:
+                res = requests.post(f"{API_BASE}/encode", json=payload)
+                data = res.json()
+                if res.status_code == 200:
+                    st.success("✅ Code Generated Successfully!")
+                    st.code(data['hidden_code'], language="text")
+                    st.markdown(f"[Click to open WhatsApp link 🔗]({data['whatsapp_link']})")
 
-st.header("ਕੋਡ ਤੋਂ ਪਤਾ ਲਗਾਓ ਬੁਟੀਕ ਦਾ ਨਾਂ ਤੇ ਰੇਟ")
-with st.form("decode_form_1"):
-    hidden_code = st.text_input("ਲੰਮੇ ਅੱਖਰਾਂ ਵਾਲਾ ਕੋਡ ਭਰੋ")
-    decode_submit = st.form_submit_button("ਦੱਸੋ ਕਿਸਦਾ ਸੂਟ ਆ ਇਹ ਤੇ ਕਿੰਨੇ ਦਾ ਹੈ")
+                    st.session_state.generated = True
+                    st.session_state.usage_count += 1
 
-    if decode_submit:
-        payload = {"hidden_code": hidden_code}
-        response = requests.post(f"{BACKEND_URL}/decode", json=payload)
-        if response.status_code == 200:
-            data = response.json()
-            st.success(f"ਬੁਟੀਕ: {data['decoded_name']}")
-            st.info(f"ਅਸਲੀ ਰੇਟ: ₹{data['original_price']}")
-            st.info(f"ਵੇਚਣ ਵਾਲਾ ਰੇਟ: ₹{data['selling_price_inr']} / ${data['selling_price_usd']}")
-            st.code(data['whatsapp_link'], language="")
-        else:
-            st.error(f"Error: {response.json().get('error', 'Failed to decode')}")
+                    # Extra: Ask for description (optional)
+                    with st.expander("📌 Pinterest ਲਈ Description ਬਣਾਓ"):
+                        user_description = st.text_area("ਰੇਟ ਮਿਟਾ ਕੇ description ਲਿਖੋ")
+                        if user_description:
+                            st.markdown("**📋 Final Output**")
+                            st.code(f"₹{data['selling_price_inr']}\n{data['hidden_code']}\n{user_description}", language="text")
+                            if st.button("📋 Copy All"):
+                                copy_to_clipboard(f"₹{data['selling_price_inr']}\n{data['hidden_code']}\n{user_description}")
+                else:
+                    st.error(data.get("error", "Something went wrong"))
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+
+    st.markdown("---")
+    with st.form("decode_form"):
+        st.subheader("🔎 Decode a Product Code")
+        hidden_code = st.text_input("Enter Hidden Code")
+        decode_button = st.form_submit_button("Decode")
+
+    if decode_button:
+        try:
+            res = requests.post(f"{API_BASE}/decode", json={"hidden_code": hidden_code, "secret_key": secret_key})
+            data = res.json()
+            if res.status_code == 200:
+                st.success("✅ Decoded Successfully")
+                st.json(data)
+            else:
+                st.error(data.get("error", "Unauthorized or invalid code."))
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+else:
+    st.info("🔐 Please enter your secret key to continue.")
